@@ -1,0 +1,200 @@
+#!/usr/bin/env python3
+import argparse
+from subprocess import Popen, PIPE
+# import shlex
+import sys
+
+
+dconfdir = "/org/gnome/terminal/legacy/profiles:"
+
+settable_keys = [
+    "visible-name",
+    "palette",
+    "foreground-color",
+    "background-color",
+    "use-theme-colors"
+]
+
+
+class Namespace:
+    def __init__(self, kwargs):
+        for prop, value in kwargs.items():
+            self.__setattr__(prop, value)
+
+
+def _get_command_output(command):
+    command_list = command.split()
+    command_list[-1] = command_list[-1].replace("___", " ")
+    process = Popen(command_list, stdout=PIPE, stderr=PIPE)
+    output = process.communicate()[0]
+    returncode = process.returncode
+
+    if returncode == 1:
+        raise OSError("The command did not run successfully")
+
+    return output
+
+
+def _get_profiles():
+    # this includes profile 'default'
+    command = fr"dconf list {dconfdir}/ | grep ^: | sed 's/\///g' | sed 's/://g'"
+    profiles = _get_command_output(command)
+    lst = [p.strip() for p in profiles.decode().split('\n') if p and p != "list"]
+    return [prid.replace('/', '').replace(':', '') for prid in lst]
+
+
+def _get_profile_list():
+    command = fr'dconf read {dconfdir}/list'
+    output = _get_command_output(command)
+    profile_list = (
+        output.decode()
+              .strip()
+              .replace("[", "")
+              .replace("]", "")
+              .replace("'", "")
+              .split(", ")
+    )
+    return profile_list
+
+
+def _get_profile_id(name):
+    profiles = _get_profile_list()
+    command = f"dconf read {dconfdir}/" + ":{profile_id}/visible-name"
+    for profile_id in profiles:
+        profile_name = _get_command_output(command.format(profile_id=profile_id))
+        if f"'{name}'" == profile_name.decode().strip():
+            return profile_id
+    return f"no profile with visible-name {name} found"
+
+
+def _make_profile():
+    profile_list = _get_profile_list()
+    profile_id = _get_command_output("uuidgen").decode().strip()
+    profile_list.append(profile_id)
+    new_list = ",___".join([f"'{pid}'" for pid in profile_list])
+    command = f"dconf write {dconfdir}/list [{new_list}]"
+    _ = _get_command_output(command)
+    return profile_id
+
+
+def _set_default_profile(profile_id):
+    command = f"dconf write {dconfdir}/default {profile_id}"
+    _ = _get_command_output(command)
+    msg = f"Set {profile_id} as default profile"
+    return msg
+
+
+def _sanity_key_value_check(key, value):
+    if key not in settable_keys:
+        raise KeyError(f"Settable keys are: {settable_keys}")
+    # do some sanity checks
+    if key == "palette":
+        # we replace spaces with '___' in the list so that it's not split
+        value = str(value).replace(" ", "___")
+        if not value.startswith("[") or not value.endswith("]"):
+            raise ValueError("The palette has to look like ['rgb(0,0,0)', ...]")
+    elif key == "use-theme-colors":
+        if value not in ["true", "false"]:
+            raise ValueError("use-theme-color value can be true or false")
+    else:
+        if not value.startswith("'") or not value.endswith("'"):
+            raise ValueError("String values have to be enclosed by single quotes")
+    return key, value
+
+
+def list_(args=None):
+    if type(args) == dict:
+        args = Namespace(args)
+    if args and args.all_:
+        msg = _get_profiles()
+    else:
+        msg = _get_profile_list()
+    return str(msg)
+
+
+def create_new_profile(args=None):
+    if type(args) != dict:
+        args = vars(args)
+    profile_id = _make_profile()
+    msg = f"Created profile {profile_id}"
+    args.pop("func")
+    for key, value in args.items():
+        if not value:
+            continue
+        msg_ = set_key(dict(profile_id=profile_id, key=key, value=value))
+        msg += "\n" + msg_
+    msg_ = set_key(dict(profile_id=profile_id, key="use-theme-colors", value="false"))
+    msg += "\n" + msg_
+    return msg
+
+
+def get_key(args):
+    if type(args) == dict:
+        args = Namespace(args)
+    if args.profile_id == "profile-id":
+        msg = _get_profile_id(args.key)
+    else:
+        directory = f"{dconfdir}/:{args.profile_id}"
+        command = f"dconf read {directory}/{args.key}"
+        value = _get_command_output(command)
+        msg = value.decode().strip()
+    return msg
+
+
+def set_key(args):
+    if type(args) == dict:
+        args = Namespace(args)
+    key, value = _sanity_key_value_check(args.key, args.value)
+    directory = f"{dconfdir}/:{args.profile_id}"
+    command = f"dconf write {directory}/{key} {value}"
+    _ = _get_command_output(command)
+    msg = f"{args.profile_id}: Set key {key} to value {value.replace('___', ' ')}"
+    return msg
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Creates a dconf terminal profile."
+    )
+    subparsers = parser.add_subparsers(title="commands", required=True)
+
+    # list subcommand
+    list_parser = subparsers.add_parser("list")
+    list_parser.add_argument("-a, --all", action="store_true", dest="all_")
+    list_parser.set_defaults(func=list_)
+
+    # create subcomand
+    create_parser = subparsers.add_parser("create")
+    create_parser.add_argument("-n, --visible-name", type=str, dest="visible-name")
+    create_parser.add_argument("-fg, --foreground-color", type=str, dest="foreground-color")
+    create_parser.add_argument("-bg, --background-color", type=str, dest="background-color")
+    create_parser.add_argument("-p, --palette", type=str, dest="palette")
+    create_parser.set_defaults(func=create_new_profile)
+
+    # get subcommand
+    get_parser = subparsers.add_parser("get")
+    get_parser.add_argument("profile_id", type=str)
+    get_parser.add_argument("key", type=str)
+    get_parser.set_defaults(func=get_key)
+
+    # set subcommand
+    set_parser = subparsers.add_parser("set")
+    set_parser.add_argument("profile_id", type=str)
+    set_parser.add_argument("key", type=str)
+    set_parser.add_argument("value", type=str)
+    set_parser.set_defaults(func=set_key)
+
+    # call function
+    try:
+        args = parser.parse_args()
+    except TypeError:
+        parser.print_help()
+        return None
+    msg = args.func(args)
+    sys.stdout.write(msg)
+    sys.stdout.write("\n")
+
+
+if __name__ == "__main__":
+    status = main()
+    sys.exit(status)
