@@ -1,7 +1,7 @@
-pydconf
+pytermconf
 ===
 
-Python wrapper for `dconf`.
+Python wrapper around `dconf` to create and modify gnome-terminal profiles.
 
 > dconf is a low-level configuration system and settings management tool. Its main purpose is to provide a back end to GSettings on platforms that don't already have configuration storage systems. It depends on GLib. It is part of GNOME 3 and is a replacement for GConf.
 
