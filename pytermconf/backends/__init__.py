@@ -1,2 +1,2 @@
 
-__all__ = ('pil', 'wal')
+__all__ = ('imgpal', 'wal')

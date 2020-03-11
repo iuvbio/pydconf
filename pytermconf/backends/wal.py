@@ -1,5 +1,4 @@
-"""
-Generate a colorscheme using imagemagick.
+"""Generate a colorscheme using imagemagick.
 
 Taken from https://github.com/dylanaraps/pywal/blob/master/pywal/backends/wal.py
 """
@@ -9,7 +8,7 @@ import shutil
 import subprocess
 import sys
 
-import util
+from .. import util
 
 
 def imagemagick(color_count, img, magick_command):
