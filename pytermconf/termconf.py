@@ -20,6 +20,10 @@ def is_list(output):
     return output.startswith('[') and output.endswith(']')
 
 
+def is_bool(output):
+    return output in ['true', 'false']
+
+
 def str_to_list(strlist):
     return (
         strlist.replace("[", "")
@@ -40,7 +44,7 @@ def dget(key):
 
 
 def dset(key, value):
-    if not is_list(value) and value not in ['false', 'true']:
+    if not is_list(value) and not is_bool(value):
         value = f"'{value}'"
     command = f'dconf write {dconfdir}/{key} "{value}"'
     _ = _get_command_output(command)
