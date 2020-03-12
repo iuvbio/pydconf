@@ -113,10 +113,22 @@ def set_profile_key(profile_id, key, value):
 
 
 def create_new_profile(name, profile_params, set_default=False):
-    """
-    name, palette, default=False, foreground_color=None, background_color=None,
-    bold_color=None, bold_color_same_as_fg=False, use_theme_colors=False,
-    use_theme_background=False
+    """Create a new gnome-terminal profile.
+
+    Parameters
+    ----------
+    name : str
+        The value for 'visible-name' on the new profile.
+    profile_params : dict
+        All keys that should be set for the profile apart from 'visible-name'.
+        Any key-value pair that can be set should work. Use `dconf-editor` to
+        find settable keys.
+    set_default : bool (default: False)
+        Whether the new profile should be set as the default profile.
+
+    Returns
+    -------
+    None
     """
     existing_id = get_profile_id(name)
     if existing_id:
