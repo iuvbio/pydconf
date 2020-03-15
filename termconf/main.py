@@ -56,7 +56,7 @@ def make_profile_from_image(image, name, backend, set_default):
 @click.command()
 @click.argument('name')
 @click.argument('image', type=click.Path(exists=True))
-@click.option('--backend', default='imgpal')
+@click.option('-b', '--backend', default='imgpal')
 @click.option('--set-default', is_flag=True)
 def set_profile_from_image(name, image, backend, set_default):
     profile_id = termconf.get_profile_id(name)
