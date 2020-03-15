@@ -10,7 +10,7 @@ from . import termconf
 
 
 def get_colors(image, backend):
-    backend = sys.modules[f"pytermconf.backends.{backend}"]
+    backend = sys.modules[f"termconf.backends.{backend}"]
     colors = backend.get(image)
     palette = ["'rgb({0},{1},{2})'".format(*c) for c in colors]
     strpalette = ", ".join(palette)
