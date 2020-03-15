@@ -1,10 +1,10 @@
 
 from setuptools import find_packages, setup
 
-import pytermconf
+import termconf
 
 
-version = pytermconf.__version__
+version = termconf.__version__
 
 with open('README.md') as f:
     long_description = f.read()
