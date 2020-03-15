@@ -13,7 +13,7 @@ with open('requirements.txt') as f:
     dependencies = [l.strip() for l in f.readlines() if not l.startswith('#')]
 
 setup(
-    name='pytermconf',
+    name='termconf',
     version=version,
     author='iuvbio',
     author_email='cryptodemigod@protonmail.com',
@@ -25,7 +25,7 @@ setup(
     changing-colorschemes\
     """,
     packages=find_packages(),
-    entry_points={'console_scripts': ['pytc=pytermconf.main:cli']},
+    entry_points={'console_scripts': ['tconf=termconf.main:cli']},
     install_requires=dependencies,
     extras_require={
         'imgpal': []

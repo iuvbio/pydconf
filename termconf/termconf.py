@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import logging
 import shlex
 import subprocess
 
@@ -48,7 +49,7 @@ def dset(key, value):
         value = f"'{value}'"
     command = f'dconf write {dconfdir}/{key} "{value}"'
     _ = _get_command_output(command)
-    print(f"Set {key} to {value}")
+    logging.info(f"Set {key} to {value}")
     return None
 
 
@@ -102,7 +103,7 @@ def _make_profile():
 
 def set_default_profile(profile_id):
     _ = dset("default", profile_id)
-    print(f"Set {profile_id} as default profile")
+    logging.info(f"Set {profile_id} as default profile")
     return None
 
 
@@ -132,17 +133,16 @@ def create_new_profile(name, profile_params, set_default=False):
     """
     existing_id = get_profile_id(name)
     if existing_id:
-        print(f"A profile named '{name}' already exists")
+        logging.warning(f"A profile named '{name}' already exists. Aborting..")
         return None
     profile_id = _make_profile()
-    print(f"Created profile {profile_id}")
+    logging.info(f"Created profile {profile_id}")
     set_profile_key(profile_id, "visible-name", name)
     for key, value in profile_params.items():
-        print(f"setting {key} to {value}")
+        logging.debug(f"Setting {key} to {value}")
         if not value:
             continue
         set_profile_key(profile_id, key, value)
     if set_default:
         set_default_profile(profile_id)
-    print("Finished")
     return None

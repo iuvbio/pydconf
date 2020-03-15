@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import logging
 from pathlib import Path
 import sys
 
@@ -22,8 +23,17 @@ def get_colors(image, backend):
 
 
 @click.group()  # TODO: look up click pass config
-def cli():
-    pass
+@click.option('-v', '--verbose', count=True, default=0)
+def cli(verbose):
+    level = {
+        0: 'WARNING',
+        1: 'INFO',
+        2: 'DEBUG'
+    }.get(verbose)
+    logging.basicConfig(level=level)
+    logging.warning('warning mode')
+    logging.info('info mode')
+    logging.debug('debug mode')
 
 
 @click.command()
