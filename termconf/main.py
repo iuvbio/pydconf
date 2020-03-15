@@ -31,9 +31,6 @@ def cli(verbose):
         2: 'DEBUG'
     }.get(verbose)
     logging.basicConfig(level=level)
-    logging.warning('warning mode')
-    logging.info('info mode')
-    logging.debug('debug mode')
 
 
 @click.command()
